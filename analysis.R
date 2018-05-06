@@ -1,97 +1,53 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
-
-```{r setoptions, echo = TRUE}
-```
-
-## Loading and preprocessing the data
-The data are loaded directly from the zip file activity.zip. The code to do so is shown below.
-
-```{r loading data, results='hide'}
-library("dplyr")
-library("ggplot2")
-```
-
-```{r}
+#read the data and put it in a data frame
 
 df <- read.csv(unzip("activity.zip"), header = TRUE, sep = ",")
-```
 
+library("dplyr")
+library("ggplot2")
 
-## What is mean total number of steps taken per day?
-
-The first step is to calculate the total number of step for each day. The NA values are removed from the calculation.
-
-```{r}
+#number of step taken each day, removing the NAs
 a <- df %>%
   group_by(date) %>%
   summarise(sum = sum(steps, na.rm = TRUE))
 
-```
-
-Then to see a bit more easily how that total number of steps vary in function of day, a histogramm has been plotted.
-
-```{r}
-
+#plot a histogram of total number of steps per day
 ggplot(data = a, aes(date, sum)) + 
   geom_bar(stat = "identity") + 
   labs(title = "Evolution of total number of steps taken each day") +
   theme(plot.title = element_text(hjust = 0.5), plot.margin = unit(c(0.5,1,0.5,1), "cm")) +
   scale_x_discrete(breaks = c(as.character(a$date[[1]]), as.character(a$date[[11]]), as.character(a$date[[21]]), as.character(a$date[[31]]), as.character(a$date[[41]]), as.character(a$date[[51]]), as.character(a$date[[61]])))
-
+  
 ggsave("plot1.png", path = "D:\\Git_Coursera\\RepData_PeerAssessment1\\instructions_fig", device = "png")
 
-```
-
-Then the mean and the median of the total number of steps per day is calculated.
-
-```{r }
-options(digits = 2)
+#Calculate and report the mean and median of the total steps per day
 mean_steps <- mean(a$sum)
 median_steps <- median(a$sum)
-```
 
-The mean of the total number of steps taken per day is `r mean_steps` and the median is `r median_steps`.
+print(mean_steps)
+print(median_steps)
 
-
-## What is the average daily activity pattern?
-
-To obtain the average daily activity pattern, the following code was run. All the NA values were removed.
-
-```{r}
+#second question
 b <- df %>%
   group_by(interval) %>%
   summarise(mean = mean(steps, na.rm = TRUE))
 
+png(file = "D:\\Git_Coursera\\RepData_PeerAssessment1\\instructions_fig\\plot 2.png")
+
 plot(b, type = "l", ylab = "Average number of steps taken", xlab = "Time interval")
 title(main = "Average daily activity pattern")
 
-dev.copy(png, file = "D:\\Git_Coursera\\RepData_PeerAssessment1\\instructions_fig\\plot 2.png")
 dev.off()
 
-
+#answer to the second question
 time_interval <- b$interval[which(b$mean == max(b$mean))]
+print(time_interval)
 
-```
-
-We can observe that there is a maximum in the average daily step number. This maximum is obtained at the `r time_interval`th time interval.
-
-## Imputing missing values
-
-```{r}
+#third question
+#Number of NAs
 nb_NA <- sum(is.na(df$steps))
+print(nb_NA)
 
-```
-There are `r nb_NA` NA values in the data set.
-
-In my opinion, the best to do to replace these NA values is to take the corresponding daily average of steps calculated in the previous part. Meaning that for each given interval where there is a NA value, this one will be replaced by the corresponding daily average of steps.
-A new data set is created, called df_new.
-
-```{r, cache=TRUE}
+#will replace the NAs by the corresponding average on the given 5min-interval and create a new dataset
 df_new <- data.frame(steps = numeric(), date = factor(), interval = integer() )
 
 for (i in 1: dim(df)[[1]]) {
@@ -103,18 +59,17 @@ for (i in 1: dim(df)[[1]]) {
   } else {
     newrow <- data.frame(steps = df$steps[i], date = df$date[i], interval = df$interval[i])
     df_new <- rbind(df_new,newrow) 
+    
   }
+  
 }
 
-```
-
-After that, it is possible to make a new histogramm of the total number of steps per day.
-
-```{r}
+#number of step taken each day with the 
 c <- df_new %>%
   group_by(date) %>%
   summarise(sum = sum(steps))
 
+#plot a histogram of total number of steps per day
 ggplot(data = c, aes(date, sum)) + 
   geom_bar(stat = "identity") + 
   labs(title = "Evolution of total number of steps taken each day") +
@@ -123,21 +78,14 @@ ggplot(data = c, aes(date, sum)) +
 
 ggsave("plot3.png", path = "D:\\Git_Coursera\\RepData_PeerAssessment1\\instructions_fig", device = "png")
 
-options(digits = 3)
+#Calculate and report the mean and median of the total steps per day
 mean_steps_new <- mean(c$sum)
 median_steps_new <- median(c$sum)
 
-```
+print(mean_steps_new)
+print(median_steps_new)
 
-The average is now equal to `r mean_steps_new` and the median is now equal to `r median_steps_new`.
-We can observe that the mean and median have increased when the NA values are replaced. We notice also that in that case the median and the mean are equal.
-
-## Are there differences in activity patterns between weekdays and weekends?
-
-This last part is about the difference in activity between the weekdays and the weekend.
-So first, a new column in df_new is built indicating whether a given date is a weekday or a weekend day.
-
-```{r, cache= TRUE}
+#Fourth question
 Sys.setlocale("LC_TIME", "English")
 
 for (i in 1:dim(df_new)[[1]]) {
@@ -152,11 +100,6 @@ for (i in 1:dim(df_new)[[1]]) {
 }
 df_new$weektime <- factor(df_new$weektime)
 
-```
-
-After that, it is possible to calculate the average number of steps over day for weekdays and weekend days.
-
-```{r}
 d <- df_new %>%
   group_by(interval, weektime) %>%
   summarise(mean = mean(steps))
@@ -168,7 +111,3 @@ ggplot(d, aes(interval, mean)) +
   theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("plot4.png", path = "D:\\Git_Coursera\\RepData_PeerAssessment1\\instructions_fig", device = "png")
-
-```
-
-It can be observed that there is more variation during the weekdays than during the weekend.
